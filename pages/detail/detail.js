@@ -12,6 +12,7 @@ Page({
     code: '',
     market: '',
     name: '',
+    company: '',
     fullName: '',
 
     // 行情
@@ -45,8 +46,9 @@ Page({
     const code = options.code || '';
     const market = options.market || '';
     const name = decodeURIComponent(options.name || '');
+    const company = decodeURIComponent(options.company || '');
     const fullName = decodeURIComponent(options.fullName || '');
-    this.setData({ code, market, name, fullName });
+    this.setData({ code, market, name, company, fullName });
 
     // 设置 echarts 初始化回调
     this.setData({

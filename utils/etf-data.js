@@ -3,22 +3,22 @@
 
 // 纳指100 ETF列表
 const NASDAQ_100_ETFS = [
-  { code: '513100', market: 'sh', name: '纳指ETF',        fullName: '国泰纳斯达克100ETF' },
-  { code: '159501', market: 'sz', name: '纳斯达克100ETF',  fullName: '嘉实纳斯达克100ETF' },
-  { code: '513300', market: 'sh', name: '纳斯达克ETF',     fullName: '华夏纳斯达克100ETF' },
-  { code: '159941', market: 'sz', name: '纳指ETF',        fullName: '广发纳斯达克100ETF' },
-  { code: '159659', market: 'sz', name: '纳斯达克100ETF',  fullName: '招商纳斯达克100ETF' },
-  { code: '159660', market: 'sz', name: '纳斯达克100ETF',  fullName: '汇添富纳斯达克100ETF' },
-  { code: '159696', market: 'sz', name: '纳斯达克100ETF',  fullName: '易方达纳斯达克100ETF' },
-  { code: '513110', market: 'sh', name: '纳斯达克100ETF',  fullName: '华泰柏瑞纳斯达克100ETF' }
+  { code: '513100', market: 'sh', name: '纳指ETF',        company: '国泰',    fullName: '国泰纳斯达克100ETF' },
+  { code: '159501', market: 'sz', name: '纳斯达克100ETF',  company: '嘉实',    fullName: '嘉实纳斯达克100ETF' },
+  { code: '513300', market: 'sh', name: '纳斯达克ETF',     company: '华夏',    fullName: '华夏纳斯达克100ETF' },
+  { code: '159941', market: 'sz', name: '纳指ETF',        company: '广发',    fullName: '广发纳斯达克100ETF' },
+  { code: '159659', market: 'sz', name: '纳斯达克100ETF',  company: '招商',    fullName: '招商纳斯达克100ETF' },
+  { code: '159660', market: 'sz', name: '纳斯达克100ETF',  company: '汇添富',   fullName: '汇添富纳斯达克100ETF' },
+  { code: '159696', market: 'sz', name: '纳斯达克100ETF',  company: '易方达',   fullName: '易方达纳斯达克100ETF' },
+  { code: '513110', market: 'sh', name: '纳斯达克100ETF',  company: '华泰柏瑞', fullName: '华泰柏瑞纳斯达克100ETF' }
 ];
 
 // 标普500 ETF列表
 const SP500_ETFS = [
-  { code: '513500', market: 'sh', name: '标普500ETF', fullName: '博时标普500ETF' },
-  { code: '159612', market: 'sz', name: '标普500ETF', fullName: '国泰标普500ETF' },
-  { code: '159655', market: 'sz', name: '标普500ETF', fullName: '华夏标普500ETF' },
-  { code: '513650', market: 'sh', name: '标普500ETF', fullName: '南方标普500ETF' }
+  { code: '513500', market: 'sh', name: '标普500ETF', company: '博时', fullName: '博时标普500ETF' },
+  { code: '159612', market: 'sz', name: '标普500ETF', company: '国泰', fullName: '国泰标普500ETF' },
+  { code: '159655', market: 'sz', name: '标普500ETF', company: '华夏', fullName: '华夏标普500ETF' },
+  { code: '513650', market: 'sh', name: '标普500ETF', company: '南方', fullName: '南方标普500ETF' }
 ];
 
 // 基准指数（新浪美股指数代码）

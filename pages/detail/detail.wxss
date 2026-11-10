@@ -100,7 +100,7 @@
   color: #1a1a2e;
 }
 
-.etf-fullname {
+.etf-company {
   font-size: 24rpx;
   color: #999;
 }

@@ -55,6 +55,7 @@
         data-code="{{item.code}}"
         data-market="{{item.market}}"
         data-name="{{item.name}}"
+        data-company="{{item.company}}"
         data-fullname="{{item.fullName}}"
       >
         <!-- 第一行：名称+代码 / 价格+涨跌 -->
@@ -64,7 +65,7 @@
               <text class="fund-name">{{item.name}}</text>
               <text class="fund-code-inline">{{item.code}}</text>
             </view>
-            <text class="fund-fullname">{{item.fullName}}</text>
+            <text class="fund-company">{{item.company}}</text>
           </view>
           <view class="card-right">
             <text class="price-value {{item.changeClass}}">{{item.priceStr}}</text>

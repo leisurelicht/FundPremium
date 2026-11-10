@@ -126,9 +126,9 @@ Page({
   // ========== 跳转详情 ==========
 
   goDetail(e) {
-    const { code, market, name, fullname } = e.currentTarget.dataset;
+    const { code, market, name, company, fullname } = e.currentTarget.dataset;
     wx.navigateTo({
-      url: `/pages/detail/detail?code=${code}&market=${market}&name=${encodeURIComponent(name)}&fullName=${encodeURIComponent(fullname || '')}`
+      url: `/pages/detail/detail?code=${code}&market=${market}&name=${encodeURIComponent(name)}&company=${encodeURIComponent(company || '')}&fullName=${encodeURIComponent(fullname || '')}`
     });
   },
 
