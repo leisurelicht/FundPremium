@@ -22,10 +22,7 @@
       <view class="header-row">
         <view class="title-info">
           <text class="etf-name">{{name}}</text>
-          <text class="etf-company">{{company || fullName || code}}</text>
-        </view>
-        <view class="code-badge">
-          <text class="code-text">{{code}}</text>
+          <text class="etf-code">{{code}}</text>
         </view>
       </view>
 

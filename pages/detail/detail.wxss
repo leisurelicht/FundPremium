@@ -100,23 +100,10 @@
   color: #1a1a2e;
 }
 
-.etf-company {
+.etf-code {
   font-size: 24rpx;
   color: #999;
-}
-
-.code-badge {
-  background: #1a1a2e;
-  border-radius: 10rpx;
-  padding: 8rpx 20rpx;
-}
-
-.code-text {
-  font-size: 26rpx;
-  color: #fff;
   font-family: 'SF Mono', 'Menlo', monospace;
-  font-weight: 600;
-  letter-spacing: 2rpx;
 }
 
 /* 2x3 指标网格 */

@@ -1,10 +1,9 @@
 // pages/detail/detail.js - ETF详情页逻辑
 const echarts = require('../../components/ec-canvas/echarts');
 const {
-  BENCHMARK, calcPremium, formatPremium, formatPrice, formatChange,
-  formatAmount, getChangeClass, getPremiumClass, calcTrackingError
+  BENCHMARK, getChangeClass, getPremiumClass, calcTrackingError
 } = require('../../utils/etf-data');
-const { fetchQuotes, fetchKline, fetchFundNAV, fetchIndexKline } = require('../../utils/api');
+const { fetchFundQuote, fetchQuotes, fetchKline, fetchNavHistory, fetchIndexKline } = require('../../utils/api');
 
 Page({
   data: {
@@ -63,23 +62,21 @@ Page({
   async loadAllData() {
     this.setData({ loading: true, error: '' });
 
-    const etf = { code: this.data.code, market: this.data.market };
-
     try {
-      // 并行获取实时行情和近一年K线
-      const [quoteRes, klineRes] = await Promise.all([
+      // 并行：QDII Lens 行情 + 腾讯 OHLC + K线
+      const etf = { code: this.data.code, market: this.data.market };
+      const [quoteRes, txRes, klineRes] = await Promise.all([
+        fetchFundQuote(this.data.code),
         fetchQuotes([etf]),
         fetchKline(etf, 250)
       ]);
 
-      const quote = (quoteRes.items || [])[0] || {};
-      this.processQuote(quote);
-
+      this.processQuote(quoteRes, txRes);
       this._klines = klineRes.klines || [];
 
       this.setData({ ecReady: true, loading: false });
 
-      // 异步计算跟踪误差（依赖净值历史+指数历史，可能失败）
+      // 异步计算跟踪误差
       this.loadTrackingError();
     } catch (err) {
       console.error('详情页加载失败:', err);
@@ -90,32 +87,45 @@ Page({
     }
   },
 
-  processQuote(quote) {
-    const price = quote.price;
-    const nav = quote.nav;
-    const changePct = quote.changePct;
-    const premium = calcPremium(price, nav);
+  // 混合 QDII Lens（溢价/净值）+ 腾讯（OHLC/换手率）
+  processQuote(q, txRes) {
+    const tx = (txRes && txRes.items && txRes.items[0]) || {};
+
+    const price      = q.market_price;
+    const nav        = q.nav;
+    const iopv       = q.iopv;
+    const changePct  = q.price_change_pct;
+    const premiumPct = q.indicative_premium_pct;
+    const turnover   = q.turnover_cny ? q.turnover_cny / 10000 : null;
+    const open       = tx.open;
+    const high       = tx.high;
+    const low        = tx.low;
+    const txTurnover = tx.turnover;
+
+    const fmtPct = (v) => {
+      if (v == null) return '--';
+      const sign = v >= 0 ? '+' : '';
+      return `${sign}${v.toFixed(2)}%`;
+    };
 
     this.setData({
-      price, nav, change: changePct, premium,
-      open: quote.open, high: quote.high, low: quote.low,
-      prevClose: quote.prevClose, amount: quote.amountWan,
-      turnover: quote.turnover,
+      price, nav, iopv, change: changePct, premium: premiumPct,
+      open, high, low,
+      prevClose: q.prev_close, amount: turnover,
 
-      priceStr: formatPrice(price),
-      changeStr: formatChange(changePct),
-      navStr: formatPrice(nav),
-      openStr: formatPrice(quote.open),
-      highStr: formatPrice(quote.high),
-      lowStr: formatPrice(quote.low),
-      prevCloseStr: formatPrice(quote.prevClose),
-      amountStr: formatAmount(quote.amountWan),
-      turnoverStr: quote.turnover !== null && quote.turnover !== undefined
-        ? quote.turnover.toFixed(2) + '%' : '--',
+      priceStr:     price != null ? price.toFixed(3) : '--',
+      changeStr:    fmtPct(changePct),
+      navStr:       iopv != null ? iopv.toFixed(3) : '--',
+      openStr:      open != null ? open.toFixed(3) : '--',
+      highStr:      high != null ? high.toFixed(3) : '--',
+      lowStr:       low != null ? low.toFixed(3) : '--',
+      prevCloseStr: q.prev_close != null ? q.prev_close.toFixed(3) : '--',
+      amountStr:    turnover != null ? (turnover >= 10000 ? (turnover/10000).toFixed(2)+'亿' : turnover.toFixed(0)+'万') : '--',
+      turnoverStr:  txTurnover != null ? txTurnover.toFixed(2) + '%' : '--',
 
-      premiumStr: formatPremium(premium),
-      premiumClass: getPremiumClass(premium),
-      changeClass: getChangeClass(changePct)
+      premiumStr:   fmtPct(premiumPct),
+      premiumClass: getPremiumClass(premiumPct),
+      changeClass:  getChangeClass(changePct)
     });
   },
 
@@ -133,7 +143,7 @@ Page({
 
     try {
       const [navRes, idxRes] = await Promise.all([
-        fetchFundNAV(this.data.code),
+        fetchNavHistory(this.data.code),
         fetchIndexKline(benchmark)
       ]);
 
