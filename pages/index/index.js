@@ -27,8 +27,12 @@ Page({
   _sp500Data: [],
   _refreshTimer: null,
   _subStatusCache: {},     // code → subStatus/subLabel
+  _teCache: {},            // code → 跟踪误差文本（按日缓存）
+  _teDone: false,          // 本日是否已算过跟踪误差
+  _subLoaded: false,       // 申购状态是否已加载
 
   onLoad() {
+    this.restoreTeCache();
     this.fetchData();
   },
 
@@ -65,9 +69,9 @@ Page({
         refreshing: false
       });
 
-      // 后台补：申购状态 + 跟踪误差
-      this.loadSubStatus();
-      this.loadTrackingErrors();
+      // 后台补：申购状态（每会话一次） + 跟踪误差（每交易日一次）
+      if (!this._subLoaded) this.loadSubStatus();
+      if (!this._teDone) this.loadTrackingErrors();
     } catch (err) {
       console.error('获取行情失败:', err);
       this.setData({
@@ -123,7 +127,7 @@ Page({
         iopvStr:       iopv != null ? iopv.toFixed(3) : '--',
         prevCloseStr:  q.prevClose != null ? q.prevClose.toFixed(3) : '--',
         amountStr:     formatAmount(q.amountWan),
-        trackingErrStr: '--',
+        trackingErrStr: this._teCache[etf.code] || '--',
         subStatus:     cachedSub.status || null,
         subLabel:      cachedSub.label || '',
         quoteTime:     q.time || ''
@@ -134,6 +138,7 @@ Page({
   // ========== 申购状态（QDII Lens）==========
 
   async loadSubStatus() {
+    this._subLoaded = true;
     try {
       const [nasdaqRes, sp500Res] = await Promise.all([
         fetchRankings('nasdaq-100'),
@@ -220,9 +225,10 @@ Page({
     }
   },
 
-  // ========== 跟踪误差（后台渐进加载） ==========
+  // ========== 跟踪误差（每交易日算一次，结果本地缓存） ==========
 
   async loadTrackingErrors() {
+    this._teDone = true;
     this.loadGroupTrackingError(NASDAQ_100_ETFS, '_nasdaqData', BENCHMARK.nasdaq);
     this.loadGroupTrackingError(SP500_ETFS, '_sp500Data', BENCHMARK.sp500);
   },
@@ -255,14 +261,46 @@ Page({
     const arr = this[dataKey];
     if (!arr) return;
     const idx = arr.findIndex(item => item.code === code);
-    if (idx < 0) return;
-    arr[idx].trackingErrStr = value;
+    if (idx >= 0) arr[idx].trackingErrStr = value;
+
+    // 写入本地缓存（按日）
+    this._teCache[code] = value;
+    this.saveTeCache();
 
     const tabDataKey = this.data.activeTab === 'nasdaq' ? '_nasdaqData' : '_sp500Data';
-    if (dataKey === tabDataKey) {
+    if (dataKey === tabDataKey && idx >= 0) {
       this.setData({
         [`list[${idx}].trackingErrStr`]: value
       });
+    }
+  },
+
+  // ========== 跟踪误差本地缓存 ==========
+
+  todayStr() {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${m}-${day}`;
+  },
+
+  restoreTeCache() {
+    try {
+      const cached = wx.getStorageSync('te_cache');
+      if (cached && cached.date === this.todayStr() && cached.map) {
+        this._teCache = cached.map;
+        this._teDone = true;
+      }
+    } catch (e) {
+      console.warn('跟踪误差缓存读取失败:', e);
+    }
+  },
+
+  saveTeCache() {
+    try {
+      wx.setStorageSync('te_cache', { date: this.todayStr(), map: this._teCache });
+    } catch (e) {
+      // 存储失败不影响功能
     }
   },
 
