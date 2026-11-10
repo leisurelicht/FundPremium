@@ -235,10 +235,15 @@
   font-weight: 800;
   font-family: 'DIN', 'SF Pro Display', sans-serif;
   letter-spacing: -1rpx;
-  color: #ffffff;
+  color: #1a1a2e;
   line-height: 1.1;
   white-space: nowrap;
+  text-align: right;
 }
+
+.price-value.up   { color: #e8453c; }
+.price-value.down { color: #1cad6d; }
+.price-value.flat { color: #1a1a2e; }
 
 .change-badge {
   margin-top: 4rpx;
