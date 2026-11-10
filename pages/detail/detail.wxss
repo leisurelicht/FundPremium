@@ -106,6 +106,19 @@
   font-family: 'SF Mono', 'Menlo', monospace;
 }
 
+/* 费率标签（header 右侧） */
+.fee-badge {
+  background: #f5f6fa;
+  border-radius: 8rpx;
+  padding: 6rpx 16rpx;
+}
+
+.fee-text {
+  font-size: 24rpx;
+  color: #8a90a0;
+  font-weight: 500;
+}
+
 /* 2x3 指标网格 */
 .metrics-grid {
   display: grid;

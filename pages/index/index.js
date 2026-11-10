@@ -3,7 +3,7 @@
 const { NASDAQ_100_ETFS, SP500_ETFS, BENCHMARK,
   getChangeClass, formatAmount, getPremiumClass,
   calcTrackingError, calcPremium } = require('../../utils/etf-data');
-const { fetchQuotes, fetchRankings, fetchNavHistory, fetchBenchmark, fetchPremiumTrend, isTradingHours } = require('../../utils/api');
+const { fetchQuotes, fetchRankings, fetchNavHistory, fetchBenchmark, fetchPremiumTrend, fetchFundFee, isTradingHours } = require('../../utils/api');
 
 const ETF_MAP = {};
 for (const e of NASDAQ_100_ETFS.concat(SP500_ETFS)) {
@@ -46,6 +46,8 @@ Page({
   _trendCache: {},         // 'nasdaq' / 'sp500' → points
   _trendLoading: {},       // 正在加载标记
   _order: null,            // 首次定序结果：tabKey → [code]
+  _feeCache: {},           // code → 费率文本
+  _feeDone: false,         // 费率是否已加载
 
   onLoad() {
     // 读取当日跟踪误差缓存（内联实现，避免依赖热更新可能缺失的方法）
@@ -101,9 +103,10 @@ Page({
         refreshing: false
       });
 
-      // 后台补：申购状态（每会话一次） + 跟踪误差（每交易日一次）
+      // 后台补：申购状态（每会话一次） + 跟踪误差（每交易日一次） + 费率
       if (!this._subLoaded) this.loadSubStatus();
       if (!this._teDone) this.loadTrackingErrors();
+      if (!this._feeDone) this.loadFees();
     } catch (err) {
       console.error('获取行情失败:', err);
       this.setData({
@@ -160,6 +163,7 @@ Page({
         prevCloseStr:  q.prevClose != null ? q.prevClose.toFixed(3) : '--',
         amountStr:     formatAmount(q.amountWan),
         trackingErrStr: (this._teCache && this._teCache[etf.code]) || '--',
+        feeStr:         (this._feeCache && this._feeCache[etf.code]) || '--',
         subStatus:     cachedSub.status || null,
         subLabel:      cachedSub.label || '',
         quoteTime:     q.time || ''
@@ -384,7 +388,38 @@ Page({
     }
   },
 
-  // ========== 跟踪误差（每交易日算一次，结果本地缓存） ==========
+  // ========== 费率加载（每会话一次） ==========
+
+  async loadFees() {
+    this._feeDone = true;
+    if (!this._feeCache) this._feeCache = {};
+
+    const allEtfs = NASDAQ_100_ETFS.concat(SP500_ETFS);
+    for (const etf of allEtfs) {
+      try {
+        const feeRes = await fetchFundFee(etf.code);
+        const str = (feeRes && feeRes.totalPct != null)
+          ? feeRes.totalPct.toFixed(2) + '%/年' : '--';
+        this._feeCache[etf.code] = str;
+        this.updateFeeBadge(etf.code, str);
+      } catch (e) {
+        console.warn(`费率 ${etf.code} 失败:`, e.message || e);
+        this._feeCache[etf.code] = '--';
+      }
+    }
+  },
+
+  updateFeeBadge(code, value) {
+    const activeKey = this.data.activeTab === 'nasdaq' ? '_nasdaqData' : '_sp500Data';
+    const arr = this[activeKey];
+    if (!arr) return;
+    const idx = arr.findIndex(item => item.code === code);
+    if (idx < 0) return;
+    arr[idx].feeStr = value;
+    this.setData({
+      [`list[${idx}].feeStr`]: value
+    });
+  },
 
   async loadTrackingErrors() {
     this._teDone = true;

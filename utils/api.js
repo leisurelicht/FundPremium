@@ -529,6 +529,37 @@ function fetchBenchmark(indexSlug) {
   });
 }
 
+// ==================== 基金费率（QDII Lens） ====================
+
+/**
+ * 获取基金管理费 + 托管费合计
+ * @param {string} code - 基金代码
+ * @returns {Promise<Object>} { totalPct, fees }
+ */
+function fetchFundFee(code) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${QDII_BASE}/funds/${code}`,
+      method: 'GET',
+      dataType: 'json',
+      timeout: 12000,
+      success(res) {
+        if (res.statusCode !== 200 || !res.data || !res.data.data) {
+          reject(new Error('QDII Lens 基金详情接口异常'));
+          return;
+        }
+        const fund = res.data.data.fund || {};
+        const fees = fund.fees || [];
+        const totalPct = fees.reduce((sum, f) => sum + (f.rate_pct || 0), 0);
+        resolve({ totalPct, fees });
+      },
+      fail(err) {
+        reject(new Error('QDII Lens 基金详情请求失败: ' + (err.errMsg || '')));
+      }
+    });
+  });
+}
+
 // ==================== 交易时段 ====================
 
 function isTradingHours() {
@@ -549,6 +580,7 @@ module.exports = {
   fetchNavHistory,
   fetchPremiumHistory,
   fetchPremiumTrend,
+  fetchFundFee,
   isTradingHours,
   parseQuoteText
 };

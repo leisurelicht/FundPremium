@@ -24,6 +24,9 @@
           <text class="etf-name">{{name}}</text>
           <text class="etf-code">{{code}}</text>
         </view>
+        <view class="fee-badge">
+          <text class="fee-text">{{feeStr}}</text>
+        </view>
       </view>
 
       <!-- 核心指标 2x3 网格 -->

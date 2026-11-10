@@ -3,7 +3,7 @@ const echarts = require('../../components/ec-canvas/echarts');
 const {
   BENCHMARK, getChangeClass, getPremiumClass, calcTrackingError
 } = require('../../utils/etf-data');
-const { fetchFundQuote, fetchQuotes, fetchKline, fetchNavHistory, fetchBenchmark, fetchPremiumHistory } = require('../../utils/api');
+const { fetchFundQuote, fetchQuotes, fetchKline, fetchNavHistory, fetchBenchmark, fetchPremiumHistory, fetchFundFee } = require('../../utils/api');
 
 Page({
   data: {
@@ -28,6 +28,7 @@ Page({
     changeClass: '',
     trackingErrStr: '--',
     trackingErrLoading: false,
+    feeStr: '--',
 
     // 状态
     loading: true,
@@ -69,12 +70,16 @@ Page({
     try {
       // 并行：QDII Lens 行情 + 腾讯 OHLC + K线 + 溢价历史
       const etf = { code: this.data.code, market: this.data.market };
-      const [quoteRes, txRes, klineRes, premiumRes] = await Promise.all([
+      const [quoteRes, txRes, klineRes, premiumRes, feeRes] = await Promise.all([
         fetchFundQuote(this.data.code),
         fetchQuotes([etf]),
         fetchKline(etf, 250),
         fetchPremiumHistory(this.data.code, '1y').catch(e => {
           console.warn('溢价历史加载失败:', e.message || e);
+          return null;
+        }),
+        fetchFundFee(this.data.code).catch(e => {
+          console.warn('费率加载失败:', e.message || e);
           return null;
         })
       ]);
@@ -88,7 +93,8 @@ Page({
       this.setData({
         ecReady: true,
         loading: false,
-        premiumEmpty: this._premiumPoints.length === 0
+        premiumEmpty: this._premiumPoints.length === 0,
+        feeStr: (feeRes && feeRes.totalPct != null) ? feeRes.totalPct.toFixed(2) + '%/年' : '--'
       });
 
       // 异步计算跟踪误差

@@ -118,6 +118,10 @@
               <text class="metric-label">跟踪误差</text>
               <text class="metric-value">{{item.trackingErrStr}}</text>
             </view>
+            <view class="metric-item">
+              <text class="metric-label">费率</text>
+              <text class="metric-value">{{item.feeStr}}</text>
+            </view>
           </view>
           <view class="arrow-icon">
             <text>›</text>
