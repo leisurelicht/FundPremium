@@ -41,9 +41,7 @@
         <!-- 溢折率 -->
         <view class="metric-cell highlight">
           <text class="cell-label">溢折率</text>
-          <view class="premium-tag {{premiumClass}}">
-            <text class="cell-value">{{premiumStr}}</text>
-          </view>
+          <text class="cell-value premium-val {{premiumClass}}">{{premiumStr}}</text>
         </view>
         <!-- 开盘价 -->
         <view class="metric-cell">

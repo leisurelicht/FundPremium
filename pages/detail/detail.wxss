@@ -141,7 +141,7 @@
 }
 
 .metric-cell.highlight {
-  background: #fffaf7;
+  background: transparent;
 }
 
 .cell-label {
@@ -174,6 +174,17 @@
 .premium-tag.discount .cell-value { color: #1cad6d; }
 .premium-tag.flat { background: #f0f2f8; }
 .premium-tag.flat .cell-value { color: #888; }
+
+/* 溢折率：与其他指标一致，仅用彩色文字 */
+.cell-value.premium-val {
+  font-weight: 800;
+  font-size: 32rpx;
+}
+
+.cell-value.premium-val.premium-high { color: #e8453c; }
+.cell-value.premium-val.premium      { color: #f06b32; }
+.cell-value.premium-val.discount     { color: #1cad6d; }
+.cell-value.premium-val.flat         { color: #888; }
 
 /* 额外指标行 */
 .extra-metrics {
