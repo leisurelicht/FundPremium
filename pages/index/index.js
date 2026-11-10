@@ -3,7 +3,7 @@
 const { NASDAQ_100_ETFS, SP500_ETFS, BENCHMARK,
   getChangeClass, formatAmount, getPremiumClass,
   calcTrackingError, calcPremium } = require('../../utils/etf-data');
-const { fetchQuotes, fetchRankings, fetchNavHistory, fetchIndexKline, fetchPremiumTrend, isTradingHours } = require('../../utils/api');
+const { fetchQuotes, fetchRankings, fetchNavHistory, fetchBenchmark, fetchPremiumTrend, isTradingHours } = require('../../utils/api');
 
 const ETF_MAP = {};
 for (const e of NASDAQ_100_ETFS.concat(SP500_ETFS)) {
@@ -55,7 +55,9 @@ Page({
       const cached = wx.getStorageSync('te_cache');
       if (cached && cached.date === today && cached.map) {
         this._teCache = cached.map;
-        this._teDone = true;
+        // 只有当全部 ETF 都有缓存时才跳过重算（新加入的基金会自动触发补算）
+        const allCodes = NASDAQ_100_ETFS.concat(SP500_ETFS).map(c => c.code);
+        this._teDone = allCodes.every(code => code in cached.map);
       }
     } catch (e) {
       console.warn('跟踪误差缓存读取失败:', e);
@@ -393,7 +395,7 @@ Page({
   async loadGroupTrackingError(etfList, dataKey, indexSymbol) {
     let idxKlines = null;
     try {
-      const idxRes = await fetchIndexKline(indexSymbol);
+      const idxRes = await fetchBenchmark(indexSymbol);
       idxKlines = idxRes.klines;
       console.log(`[跟踪误差] 指数 ${indexSymbol} 加载成功, ${idxKlines.length} 条`);
     } catch (e) {

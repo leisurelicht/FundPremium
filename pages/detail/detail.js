@@ -3,7 +3,7 @@ const echarts = require('../../components/ec-canvas/echarts');
 const {
   BENCHMARK, getChangeClass, getPremiumClass, calcTrackingError
 } = require('../../utils/etf-data');
-const { fetchFundQuote, fetchQuotes, fetchKline, fetchNavHistory, fetchIndexKline, fetchPremiumHistory } = require('../../utils/api');
+const { fetchFundQuote, fetchQuotes, fetchKline, fetchNavHistory, fetchBenchmark, fetchPremiumHistory } = require('../../utils/api');
 
 Page({
   data: {
@@ -159,7 +159,7 @@ Page({
     try {
       const [navRes, idxRes] = await Promise.all([
         fetchNavHistory(this.data.code),
-        fetchIndexKline(benchmark)
+        fetchBenchmark(benchmark)
       ]);
 
       const trackingErr = calcTrackingError(navRes.navList, idxRes.klines);

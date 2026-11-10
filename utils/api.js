@@ -493,6 +493,42 @@ function fetchPremiumTrend(indexSlug, days = 90) {
   });
 }
 
+// ==================== 基准指数数据（QDII Lens benchmark） ====================
+
+/**
+ * 获取指数的对标海外ETF历史收盘价（用于跟踪误差计算）
+ * @param {string} indexSlug - "nasdaq-100" → QQQ, "sp-500" → SPY
+ * @returns {Promise<Object>} { klines: [{date, close}] }
+ */
+function fetchBenchmark(indexSlug) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${QDII_BASE}/indices/${indexSlug}/benchmark`,
+      method: 'GET',
+      dataType: 'json',
+      timeout: 15000,
+      success(res) {
+        if (res.statusCode !== 200 || !res.data || !res.data.data) {
+          reject(new Error('QDII Lens 基准接口异常'));
+          return;
+        }
+        const points = res.data.data.points;
+        if (!Array.isArray(points) || points.length === 0) {
+          reject(new Error('QDII Lens 基准数据为空'));
+          return;
+        }
+        const klines = points
+          .filter(p => p && p.trading_date && typeof p.close === 'number' && p.close > 0)
+          .map(p => ({ date: p.trading_date, close: p.close }));
+        resolve({ klines });
+      },
+      fail(err) {
+        reject(new Error('QDII Lens 基准请求失败: ' + (err.errMsg || '')));
+      }
+    });
+  });
+}
+
 // ==================== 交易时段 ====================
 
 function isTradingHours() {
@@ -507,7 +543,7 @@ module.exports = {
   fetchQuotes,
   fetchKline,
   fetchFundNAV,
-  fetchIndexKline,
+  fetchBenchmark,
   fetchRankings,
   fetchFundQuote,
   fetchNavHistory,

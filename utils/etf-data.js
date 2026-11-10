@@ -10,7 +10,11 @@ const NASDAQ_100_ETFS = [
   { code: '159659', market: 'sz', name: '纳斯达克100ETF',  company: '招商',    fullName: '招商纳斯达克100ETF' },
   { code: '159660', market: 'sz', name: '纳斯达克100ETF',  company: '汇添富',   fullName: '汇添富纳斯达克100ETF' },
   { code: '159696', market: 'sz', name: '纳斯达克100ETF',  company: '易方达',   fullName: '易方达纳斯达克100ETF' },
-  { code: '513110', market: 'sh', name: '纳斯达克100ETF',  company: '华泰柏瑞', fullName: '华泰柏瑞纳斯达克100ETF' }
+  { code: '513110', market: 'sh', name: '纳斯达克100ETF',  company: '华泰柏瑞', fullName: '华泰柏瑞纳斯达克100ETF' },
+  { code: '159513', market: 'sz', name: '纳斯达克100ETF',  company: '大成',    fullName: '大成纳斯达克100ETF（QDII）' },
+  { code: '159632', market: 'sz', name: '纳斯达克100ETF',  company: '华安',    fullName: '华安纳斯达克100ETF（QDII）' },
+  { code: '513390', market: 'sh', name: '纳斯达克100ETF',  company: '博时',    fullName: '博时纳斯达克100ETF' },
+  { code: '513870', market: 'sh', name: '纳斯达克100ETF',  company: '富国',    fullName: '富国纳斯达克100ETF（QDII）' }
 ];
 
 // 标普500 ETF列表
@@ -21,10 +25,10 @@ const SP500_ETFS = [
   { code: '513650', market: 'sh', name: '标普500ETF', company: '南方', fullName: '南方标普500ETF' }
 ];
 
-// 基准指数（新浪美股指数代码）
+// 基准指数（QDII Lens index slug，用于 benchmark 接口）
 const BENCHMARK = {
-  nasdaq: '.NDX',   // 纳斯达克100
-  sp500: '.INX'     // 标普500
+  nasdaq: 'nasdaq-100',
+  sp500: 'sp-500'
 };
 
 // 计算溢折率: (最新价 - 参考净值) / 参考净值 * 100
