@@ -1,0 +1,114 @@
+<!-- pages/detail/detail.wxml - ETF详情页 -->
+<scroll-view class="page-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+  <!-- 加载中 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 加载失败 -->
+  <view class="error-container" wx:elif="{{error}}">
+    <text class="error-icon">⚠️</text>
+    <text class="error-text">{{error}}</text>
+    <view class="retry-btn" bindtap="loadAllData">
+      <text class="retry-text">重试</text>
+    </view>
+  </view>
+
+  <block wx:else>
+    <!-- 头部指标卡片 -->
+    <view class="metrics-card">
+      <!-- ETF名称 & 代码 -->
+      <view class="header-row">
+        <view class="title-info">
+          <text class="etf-name">{{name}}</text>
+          <text class="etf-fullname">{{fullName || code}}</text>
+        </view>
+        <view class="code-badge">
+          <text class="code-text">{{code}}</text>
+        </view>
+      </view>
+
+      <!-- 核心指标 2x3 网格 -->
+      <view class="metrics-grid">
+        <!-- 最新价 -->
+        <view class="metric-cell">
+          <text class="cell-label">最新价</text>
+          <text class="cell-value price {{changeClass}}">{{priceStr}}</text>
+        </view>
+        <!-- 涨跌幅 -->
+        <view class="metric-cell">
+          <text class="cell-label">涨跌幅</text>
+          <text class="cell-value {{changeClass}}">{{changeStr}}</text>
+        </view>
+        <!-- 溢折率 -->
+        <view class="metric-cell highlight">
+          <text class="cell-label">溢折率</text>
+          <view class="premium-tag {{premiumClass}}">
+            <text class="cell-value">{{premiumStr}}</text>
+          </view>
+        </view>
+        <!-- 开盘价 -->
+        <view class="metric-cell">
+          <text class="cell-label">开盘价</text>
+          <text class="cell-value">{{openStr}}</text>
+        </view>
+        <!-- 最高价 -->
+        <view class="metric-cell">
+          <text class="cell-label">最高价</text>
+          <text class="cell-value up">{{highStr}}</text>
+        </view>
+        <!-- 参考净值 -->
+        <view class="metric-cell">
+          <text class="cell-label">参考净值</text>
+          <text class="cell-value">{{navStr}}</text>
+        </view>
+      </view>
+
+      <!-- 其他指标 -->
+      <view class="extra-metrics">
+        <view class="extra-item">
+          <text class="extra-label">昨收</text>
+          <text class="extra-val">{{prevCloseStr}}</text>
+        </view>
+        <view class="extra-item">
+          <text class="extra-label">最低</text>
+          <text class="extra-val down">{{lowStr}}</text>
+        </view>
+        <view class="extra-item">
+          <text class="extra-label">成交额</text>
+          <text class="extra-val">{{amountStr}}</text>
+        </view>
+        <view class="extra-item">
+          <text class="extra-label">换手率</text>
+          <text class="extra-val">{{turnoverStr}}</text>
+        </view>
+        <view class="extra-item">
+          <text class="extra-label">跟踪误差</text>
+          <text class="extra-val">{{trackingErrLoading ? '计算中' : trackingErrStr}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- K线图 -->
+    <view class="chart-section">
+      <view class="chart-title">
+        <text class="chart-title-text">📈 近一年走势</text>
+        <text class="chart-subtitle">日K线</text>
+      </view>
+      <view class="chart-container">
+        <ec-canvas
+          wx:if="{{ecReady}}"
+          canvas-id="kline-chart"
+          ec="{{ec}}"
+        ></ec-canvas>
+        <view wx:else class="chart-placeholder">
+          <text class="placeholder-text">图表加载中...</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 底部安全距离 -->
+  <view class="safe-bottom"></view>
+</scroll-view>

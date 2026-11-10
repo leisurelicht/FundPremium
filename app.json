@@ -1,12 +1,13 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/logs/logs"
+    "pages/detail/detail"
   ],
   "window": {
-    "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "Weixin",
-    "navigationBarBackgroundColor": "#ffffff"
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "ETF溢价监控",
+    "navigationBarBackgroundColor": "#1a1a2e",
+    "backgroundColor": "#f5f6fa"
   },
   "style": "v2",
   "componentFramework": "glass-easel",

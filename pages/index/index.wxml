@@ -1,27 +1,119 @@
-<!--index.wxml-->
-<scroll-view class="scrollarea" scroll-y type="list">
-  <view class="container">
-    <view class="userinfo">
-      <block wx:if="{{canIUseNicknameComp && !hasUserInfo}}">
-        <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
-          <image class="avatar" src="{{userInfo.avatarUrl}}"></image>
-        </button>
-        <view class="nickname-wrapper">
-          <text class="nickname-label">昵称</text>
-          <input type="nickname" class="nickname-input" placeholder="请输入昵称" bind:change="onInputChange" />
-        </view>
-      </block>
-      <block wx:elif="{{!hasUserInfo}}">
-        <button wx:if="{{canIUseGetUserProfile}}" bindtap="getUserProfile"> 获取头像昵称 </button>
-        <view wx:else> 请使用2.10.4及以上版本基础库 </view>
-      </block>
-      <block wx:else>
-        <image bindtap="bindViewTap" class="userinfo-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
-        <text class="userinfo-nickname">{{userInfo.nickName}}</text>
-      </block>
+<!-- pages/index/index.wxml - 主列表页 -->
+<view class="page-container">
+  <!-- Tab 切换 -->
+  <view class="tab-bar">
+    <view
+      class="tab-item {{activeTab === 'nasdaq' ? 'active' : ''}}"
+      bindtap="switchTab"
+      data-tab="nasdaq"
+    >
+      <text class="tab-text">纳指100</text>
+      <view class="tab-indicator" wx:if="{{activeTab === 'nasdaq'}}"></view>
     </view>
-    <view class="usermotto">
-      <text class="user-motto">{{motto}}</text>
+    <view
+      class="tab-item {{activeTab === 'sp500' ? 'active' : ''}}"
+      bindtap="switchTab"
+      data-tab="sp500"
+    >
+      <text class="tab-text">标普500</text>
+      <view class="tab-indicator" wx:if="{{activeTab === 'sp500'}}"></view>
     </view>
   </view>
-</scroll-view>
+
+  <!-- 列表区域 -->
+  <scroll-view
+    class="list-scroll"
+    scroll-y
+    refresher-enabled
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+    enhanced
+    show-scrollbar="{{false}}"
+  >
+    <!-- 加载中 -->
+    <view class="loading-container" wx:if="{{loading && list.length === 0}}">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">正在加载行情数据...</text>
+    </view>
+
+    <!-- 错误提示 -->
+    <view class="error-container" wx:elif="{{error}}">
+      <text class="error-icon">⚠️</text>
+      <text class="error-text">{{error}}</text>
+      <view class="retry-btn" bindtap="fetchData">
+        <text class="retry-text">重试</text>
+      </view>
+    </view>
+
+    <!-- ETF 卡片列表 -->
+    <view class="card-list" wx:else>
+      <view
+        class="etf-card"
+        wx:for="{{list}}"
+        wx:key="code"
+        bindtap="goDetail"
+        data-code="{{item.code}}"
+        data-market="{{item.market}}"
+        data-name="{{item.name}}"
+        data-fullname="{{item.fullName}}"
+      >
+        <!-- 第一行：名称+代码 / 价格+涨跌 -->
+        <view class="card-top">
+          <view class="card-left">
+            <view class="name-row">
+              <text class="fund-name">{{item.name}}</text>
+              <text class="fund-code-inline">{{item.code}}</text>
+            </view>
+            <text class="fund-fullname">{{item.fullName}}</text>
+          </view>
+          <view class="card-right">
+            <text class="price-value {{item.changeClass}}">{{item.priceStr}}</text>
+            <view class="change-badge {{item.changeClass}}">
+              <text class="change-text">{{item.changeStr}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 第二行：指标 + 溢折率/跟踪误差 -->
+        <view class="card-bottom">
+          <view class="metrics-row">
+            <view class="metric-item">
+              <text class="metric-label">净值</text>
+              <text class="metric-value">{{item.iopvStr}}</text>
+            </view>
+            <view class="metric-item">
+              <text class="metric-label">成交额</text>
+              <text class="metric-value">{{item.amountStr}}</text>
+            </view>
+            <view class="metric-item">
+              <text class="metric-label">溢折率</text>
+              <view class="premium-inline premium-inline-{{item.premiumClass}}">
+                <text class="metric-value premium-val">{{item.premiumStr}}</text>
+              </view>
+            </view>
+            <view class="metric-item">
+              <text class="metric-label">跟踪误差</text>
+              <text class="metric-value">{{item.trackingErrStr}}</text>
+            </view>
+          </view>
+          <view class="arrow-icon">
+            <text>›</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部更新时间 -->
+      <view class="update-time" wx:if="{{lastUpdate}}">
+        <text class="update-text">最后更新 {{lastUpdate}}</text>
+      </view>
+    </view>
+
+    <!-- 底部安全距离 -->
+    <view class="safe-bottom"></view>
+  </scroll-view>
+
+  <!-- 非交易时段提示 -->
+  <view class="off-hours-bar" wx:if="{{!isTrading}}">
+    <text class="off-hours-text">⏸ 非交易时段，数据为最近收盘价</text>
+  </view>
+</view>

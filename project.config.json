@@ -2,7 +2,12 @@
   "compileType": "miniprogram",
   "libVersion": "trial",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "file",
+        "value": "card-preview.png"
+      }
+    ],
     "include": []
   },
   "setting": {
