@@ -408,6 +408,50 @@ function fetchNavHistory(code) {
   });
 }
 
+// ==================== 溢价历史（QDII Lens） ====================
+
+/**
+ * 获取基金折溢价历史
+ * @param {string} code  - 基金代码
+ * @param {string} range - "1y"（近一年）| "all"
+ * @returns {Promise<Object>} { points: [{date, premium, closePrice, nav, iopv}] }
+ *
+ * 说明：indicative_premium_pct（参考溢价，基于 IOPV）最稳定；
+ *       最新一天 official_nav_premium_pct 可能为 null（T+1 未公布净值）。
+ */
+function fetchPremiumHistory(code, range = '1y') {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${QDII_BASE}/funds/${code}/premium-history`,
+      method: 'GET',
+      data: { range },
+      dataType: 'json',
+      timeout: 15000,
+      success(res) {
+        if (res.statusCode !== 200 || !res.data || !Array.isArray(res.data.data)) {
+          reject(new Error('QDII Lens 溢价历史接口异常'));
+          return;
+        }
+        const points = res.data.data
+          .filter(i => i && i.trading_date)
+          .map(i => ({
+            date: i.trading_date,
+            premium: typeof i.indicative_premium_pct === 'number'
+              ? i.indicative_premium_pct
+              : (typeof i.official_nav_premium_pct === 'number' ? i.official_nav_premium_pct : null),
+            closePrice: i.close_price,
+            nav: i.nav,
+            iopv: i.iopv
+          }));
+        resolve({ points });
+      },
+      fail(err) {
+        reject(new Error('QDII Lens 溢价历史请求失败: ' + (err.errMsg || '')));
+      }
+    });
+  });
+}
+
 // ==================== 交易时段 ====================
 
 function isTradingHours() {
@@ -426,6 +470,7 @@ module.exports = {
   fetchRankings,
   fetchFundQuote,
   fetchNavHistory,
+  fetchPremiumHistory,
   isTradingHours,
   parseQuoteText
 };

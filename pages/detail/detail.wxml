@@ -87,12 +87,27 @@
       </view>
     </view>
 
-    <!-- K线图 -->
+    <!-- 走势图（价格K线 / 溢价率） -->
     <view class="chart-section">
       <view class="chart-title">
         <text class="chart-title-text">📈 近一年走势</text>
-        <text class="chart-subtitle">日K线</text>
+        <text class="chart-subtitle">{{chartMode === 'premium' ? '溢折率' : '日K线'}}</text>
       </view>
+
+      <!-- 图表切换 -->
+      <view class="chart-tabs">
+        <view
+          class="chart-tab {{chartMode === 'kline' ? 'active' : ''}}"
+          bindtap="switchChart"
+          data-mode="kline"
+        >价格K线</view>
+        <view
+          class="chart-tab {{chartMode === 'premium' ? 'active' : ''}}"
+          bindtap="switchChart"
+          data-mode="premium"
+        >溢折率走势</view>
+      </view>
+
       <view class="chart-container">
         <ec-canvas
           wx:if="{{ecReady}}"

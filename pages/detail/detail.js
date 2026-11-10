@@ -3,7 +3,7 @@ const echarts = require('../../components/ec-canvas/echarts');
 const {
   BENCHMARK, getChangeClass, getPremiumClass, calcTrackingError
 } = require('../../utils/etf-data');
-const { fetchFundQuote, fetchQuotes, fetchKline, fetchNavHistory, fetchIndexKline } = require('../../utils/api');
+const { fetchFundQuote, fetchQuotes, fetchKline, fetchNavHistory, fetchIndexKline, fetchPremiumHistory } = require('../../utils/api');
 
 Page({
   data: {
@@ -32,6 +32,10 @@ Page({
     // 状态
     loading: true,
     error: '',
+
+    // 图表模式：kline = 价格K线，premium = 溢价率走势
+    chartMode: 'kline',
+    premiumEmpty: false,
 
     // echarts
     ecReady: false,
@@ -63,18 +67,29 @@ Page({
     this.setData({ loading: true, error: '' });
 
     try {
-      // 并行：QDII Lens 行情 + 腾讯 OHLC + K线
+      // 并行：QDII Lens 行情 + 腾讯 OHLC + K线 + 溢价历史
       const etf = { code: this.data.code, market: this.data.market };
-      const [quoteRes, txRes, klineRes] = await Promise.all([
+      const [quoteRes, txRes, klineRes, premiumRes] = await Promise.all([
         fetchFundQuote(this.data.code),
         fetchQuotes([etf]),
-        fetchKline(etf, 250)
+        fetchKline(etf, 250),
+        fetchPremiumHistory(this.data.code, '1y').catch(e => {
+          console.warn('溢价历史加载失败:', e.message || e);
+          return null;
+        })
       ]);
 
       this.processQuote(quoteRes, txRes);
       this._klines = klineRes.klines || [];
 
-      this.setData({ ecReady: true, loading: false });
+      const points = (premiumRes && premiumRes.points) || [];
+      this._premiumPoints = points.filter(p => p.premium !== null);
+
+      this.setData({
+        ecReady: true,
+        loading: false,
+        premiumEmpty: this._premiumPoints.length === 0
+      });
 
       // 异步计算跟踪误差
       this.loadTrackingError();
@@ -176,11 +191,121 @@ Page({
       devicePixelRatio: dpr
     });
     canvas.setChart(chart);
+    this._chart = chart;
     chart.setOption(this.buildChartOption());
     return chart;
   },
 
+  // 切换图表：价格K线 / 溢价率走势
+  switchChart(e) {
+    const mode = e.currentTarget.dataset.mode;
+    if (mode === this.data.chartMode) return;
+
+    this.setData({ chartMode: mode });
+
+    if (this._chart) {
+      this._chart.setOption(this.buildChartOption(), true);
+    }
+  },
+
   buildChartOption() {
+    return this.data.chartMode === 'premium'
+      ? this.buildPremiumOption()
+      : this.buildKlineOption();
+  },
+
+  // ========== 溢价率走势图 ==========
+
+  buildPremiumOption() {
+    const points = this._premiumPoints || [];
+    const dates = points.map(p => p.date);
+    const values = points.map(p => p.premium);
+
+    if (points.length === 0) {
+      return {
+        backgroundColor: '#fafbfd',
+        title: {
+          text: '暂无溢价历史数据',
+          left: 'center',
+          top: 'middle',
+          textStyle: { fontSize: 12, color: '#b0b5c0', fontWeight: 'normal' }
+        }
+      };
+    }
+
+    const last = values[values.length - 1];
+
+    return {
+      backgroundColor: '#fafbfd',
+      animation: false,
+      grid: { left: 10, right: 12, top: 30, bottom: 24 },
+      xAxis: {
+        type: 'category',
+        data: dates,
+        boundaryGap: false,
+        axisLine: { lineStyle: { color: '#e0e0e0' } },
+        axisTick: { show: false },
+        axisLabel: {
+          fontSize: 9,
+          color: '#999',
+          formatter: v => {
+            if (!v) return '';
+            const p = v.split('-');
+            return p[1] ? p[1] + '/' + p[2] : v;
+          },
+          interval: Math.max(Math.floor(dates.length / 5), 1)
+        }
+      },
+      yAxis: {
+        type: 'value',
+        scale: true,
+        splitNumber: 4,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: {
+          fontSize: 9,
+          color: '#999',
+          formatter: v => v.toFixed(0) + '%'
+        },
+        splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } }
+      },
+      tooltip: { trigger: 'axis' },
+      series: [{
+        name: '溢折率',
+        type: 'line',
+        data: values,
+        smooth: true,
+        symbol: 'none',
+        connectNulls: true,
+        lineStyle: { width: 1.5, color: '#e8453c' },
+        areaStyle: { color: 'rgba(232,69,60,0.10)' },
+        markLine: {
+          silent: true,
+          symbol: 'none',
+          lineStyle: { color: '#c9ced8', type: 'dashed', width: 1 },
+          data: [{ yAxis: 0 }],
+          label: { show: false }
+        },
+        markPoint: {
+          symbol: 'circle',
+          symbolSize: 6,
+          itemStyle: { color: '#e8453c' },
+          label: {
+            show: true,
+            position: 'left',
+            formatter: () => (last >= 0 ? '+' : '') + last.toFixed(2) + '%',
+            fontSize: 10,
+            color: '#e8453c'
+          },
+          data: [{ coord: [dates[dates.length - 1], last] }]
+        }
+      }]
+    };
+  },
+
+  // ========== 价格K线图 ==========
+
+  buildKlineOption() {
     const klines = this._klines || [];
     const dates = klines.map(k => k.date);
     const ohlc = klines.map(k => [k.open, k.close, k.low, k.high]);
