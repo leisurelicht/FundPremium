@@ -94,14 +94,22 @@ function parseQuoteFields(f) {
     return isNaN(v) ? null : v;
   };
 
-  // 参考净值 NAV：位于 "CNY" 前一位
-  // 该字段对国内ETF与净值几乎一致，对QDII为最新披露净值
-  let nav = null;
+  // CNY 前各字段：[... IOPV ... NAV CNY]
+  // IOPV 在 CNY 前第 4 位（盘中实时估算净值，同花顺/华泰用的就是这个）
+  // NAV  在 CNY 前第 1 位（最新披露净值，用于跟踪误差等）
+  let iopv = null;
+  let nav  = null;
   const cnyIdx = f.lastIndexOf('CNY');
+  if (cnyIdx >= 4) {
+    const v = parseFloat(f[cnyIdx - 4]);
+    if (!isNaN(v) && v > 0.5) iopv = v;
+  }
   if (cnyIdx > 0) {
     const v = parseFloat(f[cnyIdx - 1]);
     if (!isNaN(v)) nav = v;
   }
+  // 如果取不到 IOPV，退回到 NAV
+  if (iopv === null) iopv = nav;
 
   return {
     code: f[2],
@@ -110,13 +118,14 @@ function parseQuoteFields(f) {
     prevClose: num(4),
     open: num(5),
     change: num(31),
-    changePct: num(32),
+    changePct: num(32),               // 已 ×100，如 -0.74 → "-0.74%"
     high: num(33),
     low: num(34),
-    amountWan: num(37),      // 成交额（万元）
-    turnover: num(38),       // 换手率（%）
-    nav: nav,                // 参考净值
-    time: f[30] || ''        // 行情时间 20261109161457
+    amountWan: num(37),              // 成交额（万元）
+    turnover: num(38),               // 换手率（%）
+    iopv: iopv,                      // 盘中实时估算净值（用于溢价）
+    nav:  nav,                       // 最新披露净值（用于跟踪误差）
+    time: f[30] || ''
   };
 }
 
