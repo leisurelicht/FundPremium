@@ -452,6 +452,47 @@ function fetchPremiumHistory(code, range = '1y') {
   });
 }
 
+// ==================== 指数溢价中位数趋势（QDII Lens） ====================
+
+/**
+ * 获取同指数全部 ETF 的溢价中位数趋势
+ * @param {string} indexSlug - "nasdaq-100" | "sp-500"
+ * @param {number} days      - 回溯天数，默认 90
+ * @returns {Promise<Object>} { points: [{date, median, sample}] }
+ */
+function fetchPremiumTrend(indexSlug, days = 90) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${QDII_BASE}/indices/${indexSlug}/premium-trend`,
+      method: 'GET',
+      data: { days },
+      dataType: 'json',
+      timeout: 15000,
+      success(res) {
+        if (res.statusCode !== 200 || !res.data || !Array.isArray(res.data.data)) {
+          reject(new Error('QDII Lens 溢价趋势接口异常'));
+          return;
+        }
+        const points = res.data.data
+          .filter(i => i && i.trading_date)
+          .map(i => ({
+            date: i.trading_date,
+            median: typeof i.median_indicative_premium_pct === 'number'
+              ? i.median_indicative_premium_pct
+              : (typeof i.median_official_nav_premium_pct === 'number'
+                  ? i.median_official_nav_premium_pct : null),
+            sample: i.sample_size || i.official_sample_size || 0
+          }))
+          .filter(p => p.median !== null);
+        resolve({ points });
+      },
+      fail(err) {
+        reject(new Error('QDII Lens 溢价趋势请求失败: ' + (err.errMsg || '')));
+      }
+    });
+  });
+}
+
 // ==================== 交易时段 ====================
 
 function isTradingHours() {
@@ -471,6 +512,7 @@ module.exports = {
   fetchFundQuote,
   fetchNavHistory,
   fetchPremiumHistory,
+  fetchPremiumTrend,
   isTradingHours,
   parseQuoteText
 };

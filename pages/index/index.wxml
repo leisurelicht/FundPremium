@@ -20,6 +20,28 @@
     </view>
   </view>
 
+  <!-- 指数溢价中位数迷你趋势条 -->
+  <view class="trend-strip" wx:if="{{premiumTrend.bars.length}}">
+    <view class="trend-head">
+      <view class="trend-title-wrap">
+        <text class="trend-title">{{premiumTrend.label}}·溢价中位数</text>
+        <text class="trend-range">近60日 {{premiumTrend.minStr}} ~ {{premiumTrend.maxStr}}</text>
+      </view>
+      <text class="trend-current {{premiumTrend.cls}}">{{premiumTrend.currentStr}}</text>
+    </view>
+
+    <view class="trend-bars anchor-{{premiumTrend.anchor || 'center'}}">
+      <view
+        class="bar-col {{index === premiumTrend.lastIndex ? 'is-last' : ''}}"
+        wx:for="{{premiumTrend.bars}}"
+        wx:key="i"
+      >
+        <view class="bar-up" style="height:{{item.up}}%"></view>
+        <view class="bar-down" style="height:{{item.down}}%"></view>
+      </view>
+    </view>
+  </view>
+
   <!-- 列表区域 -->
   <scroll-view
     class="list-scroll"

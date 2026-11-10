@@ -63,6 +63,119 @@
   overflow-x: hidden;
 }
 
+/* ========== 指数溢价中位数迷你趋势条 ========== */
+.trend-strip {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16rpx 24rpx 14rpx;
+  background: #ffffff;
+  border-bottom: 1rpx solid #f0f2f8;
+}
+
+.trend-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.trend-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.trend-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #1a1a2e;
+  line-height: 1.3;
+}
+
+.trend-range {
+  font-size: 18rpx;
+  color: #b0b5c0;
+  line-height: 1.4;
+}
+
+.trend-current {
+  font-size: 32rpx;
+  font-weight: 800;
+  font-family: 'DIN', 'SF Pro Display', sans-serif;
+}
+
+.trend-current.up { color: #e8453c; }
+.trend-current.down { color: #1cad6d; }
+
+.trend-bars {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 64rpx;
+  width: 100%;
+}
+
+.bar-col {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  margin-right: 2rpx;
+}
+
+.bar-col:last-child {
+  margin-right: 0;
+}
+
+/* 0 基准线 */
+.bar-col::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1rpx;
+  background: #eef0f5;
+}
+
+.bar-up {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 50%;
+  background: #e8453c;
+  opacity: 0.35;
+  border-radius: 2rpx 2rpx 0 0;
+}
+
+.bar-down {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  background: #1cad6d;
+  opacity: 0.35;
+  border-radius: 0 0 2rpx 2rpx;
+}
+
+.bar-col.is-last .bar-up,
+.bar-col.is-last .bar-down {
+  opacity: 1;
+}
+
+/* 全为正溢价时从底部起算 */
+.trend-bars.anchor-bottom .bar-up {
+  bottom: 0;
+  border-radius: 2rpx;
+}
+
+.trend-bars.anchor-bottom .bar-down {
+  display: none;
+}
+
+.trend-bars.anchor-bottom .bar-col::after {
+  display: none;
+}
+
 /* ========== 加载中 ========== */
 .loading-container {
   display: flex;

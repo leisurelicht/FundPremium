@@ -3,7 +3,7 @@
 const { NASDAQ_100_ETFS, SP500_ETFS, BENCHMARK,
   getChangeClass, formatAmount, getPremiumClass,
   calcTrackingError, calcPremium } = require('../../utils/etf-data');
-const { fetchQuotes, fetchRankings, fetchNavHistory, fetchIndexKline, isTradingHours } = require('../../utils/api');
+const { fetchQuotes, fetchRankings, fetchNavHistory, fetchIndexKline, fetchPremiumTrend, isTradingHours } = require('../../utils/api');
 
 const ETF_MAP = {};
 for (const e of NASDAQ_100_ETFS.concat(SP500_ETFS)) {
@@ -20,7 +20,20 @@ Page({
     refreshing: false,
     error: '',
     lastUpdate: '',
-    isTrading: true
+    isTrading: true,
+
+    // 顶部指数溢价中位数迷你趋势
+    premiumTrend: {
+      label: '纳指100',
+      anchor: 'center',
+      current: null,
+      currentStr: '--',
+      cls: '',
+      bars: [],
+      lastIndex: -1,
+      minStr: '--',
+      maxStr: '--'
+    }
   },
 
   _nasdaqData: [],
@@ -30,6 +43,8 @@ Page({
   _teCache: {},            // code → 跟踪误差文本（按日缓存）
   _teDone: false,          // 本日是否已算过跟踪误差
   _subLoaded: false,       // 申购状态是否已加载
+  _trendCache: {},         // 'nasdaq' / 'sp500' → points
+  _trendLoading: {},       // 正在加载标记
 
   onLoad() {
     // 读取当日跟踪误差缓存（内联实现，避免依赖热更新可能缺失的方法）
@@ -47,6 +62,7 @@ Page({
     if (!this._teCache) this._teCache = {};
 
     this.fetchData();
+    this.loadTrend();
   },
 
   onShow() {
@@ -196,6 +212,7 @@ Page({
     if (tab === this.data.activeTab) return;
     this.setData({ activeTab: tab });
     this.updateListData();
+    this.applyTrend();
   },
 
   updateListData() {
@@ -203,6 +220,91 @@ Page({
       ? this._nasdaqData
       : this._sp500Data;
     this.setData({ list: data });
+  },
+
+  // ========== 顶部指数溢价中位数迷你趋势 ==========
+
+  /**
+   * 预取两个指数的溢价中位数趋势（各 90 天）
+   */
+  loadTrend() {
+    this.fetchTrendFor('nasdaq');
+    this.fetchTrendFor('sp500');
+  },
+
+  fetchTrendFor(tabKey) {
+    if (this._trendCache[tabKey] || this._trendLoading[tabKey]) return Promise.resolve();
+    this._trendLoading[tabKey] = true;
+    if (!this._trendCache) this._trendCache = {};
+
+    const slug = tabKey === 'sp500' ? 'sp-500' : 'nasdaq-100';
+    return fetchPremiumTrend(slug, 90)
+      .then(res => {
+        this._trendCache[tabKey] = res.points || [];
+        if (this.data.activeTab === tabKey) this.applyTrend();
+      })
+      .catch(e => {
+        console.warn(`[溢价趋势] ${tabKey} 加载失败:`, e.message || e);
+      })
+      .then(() => {
+        this._trendLoading[tabKey] = false;
+      });
+  },
+
+  /**
+   * 把缓存中的趋势数据转成迷你柱状条，写入 data.premiumTrend
+   */
+  applyTrend() {
+    const tabKey = this.data.activeTab;
+    const points = (this._trendCache && this._trendCache[tabKey]) || [];
+    const label = tabKey === 'sp500' ? '标普500' : '纳指100';
+
+    if (!points.length) {
+      this.fetchTrendFor(tabKey);
+      this.setData({
+        premiumTrend: {
+          label, current: null, currentStr: '--', cls: '',
+          bars: [], lastIndex: -1, minStr: '--', maxStr: '--'
+        }
+      });
+      return;
+    }
+
+    // 只取最近 60 个交易日，保证条不拥挤
+    const recent = points.slice(-60);
+    const vals = recent.map(p => p.median);
+    const hasNeg = vals.some(v => v < 0);
+
+    const maxAbs = Math.max(1, ...recent.map(p => Math.abs(p.median)));
+    // 全为正时从底部起算更饱满；正负混合则以 0 为中线
+    const scale = hasNeg ? 46 : 92;
+
+    const bars = recent.map((p, i) => {
+      const v = p.median;
+      const isUp = v >= 0;
+      const h = Math.max(3, (Math.abs(v) / maxAbs) * scale + 2);
+      return {
+        i,
+        up: isUp ? h : 0,
+        down: isUp ? 0 : h
+      };
+    });
+
+    const last = recent[recent.length - 1];
+
+    this.setData({
+      premiumTrend: {
+        label,
+        anchor: hasNeg ? 'center' : 'bottom',
+        current: last.median,
+        currentStr: (last.median >= 0 ? '+' : '') + last.median.toFixed(2) + '%',
+        cls: last.median >= 0 ? 'up' : 'down',
+        bars,
+        lastIndex: bars.length - 1,
+        minStr: Math.min(...vals).toFixed(1) + '%',
+        maxStr: Math.max(...vals).toFixed(1) + '%'
+      }
+    });
   },
 
   // ========== 跳转详情 ==========
