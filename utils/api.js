@@ -295,6 +295,111 @@ function fetchIndexKline(symbol) {
   });
 }
 
+// ==================== QDII Lens API ====================
+//
+// 文档：https://qdiilens.com/llms.txt
+// 只读、无需认证；限额 120 次/分钟
+// 所有响应为 { data, meta }；ma.as_of 为数据时点
+//
+// 注意：price_change_pct、indicative_premium_pct 等百分比字段
+// **已 ×100**，直接格式化即可（例如 0.6182 → "0.62%"）。
+
+const QDII_BASE = 'https://qdiilens.com/v1';
+
+/**
+ * 按指数拉溢价排行（列表页主力接口）
+ * @param {string} indexSlug - "nasdaq-100" | "sp-500"
+ * @returns {Promise<Object>} { items: [{fund, quote}], meta }
+ */
+function fetchRankings(indexSlug) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${QDII_BASE}/rankings/premiums`,
+      method: 'GET',
+      data: { index: indexSlug },
+      dataType: 'json',
+      timeout: 12000,
+      success(res) {
+        if (res.statusCode !== 200 || !res.data || !res.data.data) {
+          reject(new Error('QDII Lens 排行接口异常'));
+          return;
+        }
+        const raw = res.data.data;
+        const items = raw.map(item => ({
+          code: (item.fund && item.fund.code) || (item.quote && item.quote.code) || '',
+          fund: item.fund || {},
+          quote: item.quote || {},
+          rules: item.rules || []
+        }));
+        resolve({ items, meta: res.data.meta || {} });
+      },
+      fail(err) {
+        reject(new Error('QDII Lens 请求失败: ' + (err.errMsg || '')));
+      }
+    });
+  });
+}
+
+/**
+ * 单基金实时行情快照
+ * @param {string} code - 基金代码
+ * @returns {Promise<Object>} { code, quote }
+ */
+function fetchFundQuote(code) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${QDII_BASE}/funds/${code}/quote`,
+      method: 'GET',
+      dataType: 'json',
+      timeout: 12000,
+      success(res) {
+        if (res.statusCode !== 200 || !res.data || !res.data.data) {
+          reject(new Error('QDII Lens 报价接口异常'));
+          return;
+        }
+        resolve({ code, ...res.data.data, meta: res.data.meta || {} });
+      },
+      fail(err) {
+        reject(new Error('QDII Lens 报价请求失败: ' + (err.errMsg || '')));
+      }
+    });
+  });
+}
+
+/**
+ * 基金净值历史（轻量 JSON，替代 pingzhongdata 500KB）
+ * @param {string} code - 基金代码
+ * @returns {Promise<Object>} { navList: [{date, nav}] }
+ */
+function fetchNavHistory(code) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: `${QDII_BASE}/funds/${code}/nav-history`,
+      method: 'GET',
+      dataType: 'json',
+      timeout: 15000,
+      success(res) {
+        if (res.statusCode !== 200 || !res.data || !res.data.data) {
+          reject(new Error('QDII Lens 净值接口异常'));
+          return;
+        }
+        const raw = res.data.data;
+        if (!Array.isArray(raw) || raw.length === 0) {
+          reject(new Error('QDII Lens 净值数据为空'));
+          return;
+        }
+        const navList = raw
+          .filter(i => i && typeof i.nav === 'number' && i.valuation_date)
+          .map(i => ({ date: i.valuation_date, nav: i.nav }));
+        resolve({ navList });
+      },
+      fail(err) {
+        reject(new Error('QDII Lens 净值请求失败: ' + (err.errMsg || '')));
+      }
+    });
+  });
+}
+
 // ==================== 交易时段 ====================
 
 function isTradingHours() {
@@ -310,6 +415,9 @@ module.exports = {
   fetchKline,
   fetchFundNAV,
   fetchIndexKline,
+  fetchRankings,
+  fetchFundQuote,
+  fetchNavHistory,
   isTradingHours,
   parseQuoteText
 };
