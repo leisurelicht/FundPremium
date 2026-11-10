@@ -32,7 +32,20 @@ Page({
   _subLoaded: false,       // 申购状态是否已加载
 
   onLoad() {
-    this.restoreTeCache();
+    // 读取当日跟踪误差缓存（内联实现，避免依赖热更新可能缺失的方法）
+    try {
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const cached = wx.getStorageSync('te_cache');
+      if (cached && cached.date === today && cached.map) {
+        this._teCache = cached.map;
+        this._teDone = true;
+      }
+    } catch (e) {
+      console.warn('跟踪误差缓存读取失败:', e);
+    }
+    if (!this._teCache) this._teCache = {};
+
     this.fetchData();
   },
 
@@ -102,7 +115,7 @@ Page({
         return `${sign}${v.toFixed(2)}%`;
       };
 
-      const cachedSub = this._subStatusCache[etf.code] || {};
+      const cachedSub = (this._subStatusCache && this._subStatusCache[etf.code]) || {};
 
       return {
         code:          meta.code,
@@ -127,7 +140,7 @@ Page({
         iopvStr:       iopv != null ? iopv.toFixed(3) : '--',
         prevCloseStr:  q.prevClose != null ? q.prevClose.toFixed(3) : '--',
         amountStr:     formatAmount(q.amountWan),
-        trackingErrStr: this._teCache[etf.code] || '--',
+        trackingErrStr: (this._teCache && this._teCache[etf.code]) || '--',
         subStatus:     cachedSub.status || null,
         subLabel:      cachedSub.label || '',
         quoteTime:     q.time || ''
@@ -139,6 +152,7 @@ Page({
 
   async loadSubStatus() {
     this._subLoaded = true;
+    if (!this._subStatusCache) this._subStatusCache = {};
     try {
       const [nasdaqRes, sp500Res] = await Promise.all([
         fetchRankings('nasdaq-100'),
@@ -264,8 +278,9 @@ Page({
     if (idx >= 0) arr[idx].trackingErrStr = value;
 
     // 写入本地缓存（按日）
+    if (!this._teCache) this._teCache = {};
     this._teCache[code] = value;
-    this.saveTeCache();
+    if (typeof this.saveTeCache === 'function') this.saveTeCache();
 
     const tabDataKey = this.data.activeTab === 'nasdaq' ? '_nasdaqData' : '_sp500Data';
     if (dataKey === tabDataKey && idx >= 0) {
