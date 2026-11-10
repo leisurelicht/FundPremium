@@ -48,7 +48,6 @@ function fetchQuotes(etfs) {
       method: 'GET',
       dataType: 'text',
       timeout: 12000,
-      header: { 'User-Agent': 'Mozilla/5.0' },
       success(res) {
         if (res.statusCode !== 200 || typeof res.data !== 'string') {
           reject(new Error(`行情接口异常 HTTP ${res.statusCode}`));
