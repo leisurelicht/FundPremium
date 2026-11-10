@@ -45,6 +45,7 @@ Page({
   _subLoaded: false,       // 申购状态是否已加载
   _trendCache: {},         // 'nasdaq' / 'sp500' → points
   _trendLoading: {},       // 正在加载标记
+  _order: null,            // 首次定序结果：tabKey → [code]
 
   onLoad() {
     // 读取当日跟踪误差缓存（内联实现，避免依赖热更新可能缺失的方法）
@@ -87,8 +88,8 @@ Page({
       const allEtfs = NASDAQ_100_ETFS.concat(SP500_ETFS);
       const txRes = await fetchQuotes(allEtfs);
 
-      this._nasdaqData = this.mapQuoteData(NASDAQ_100_ETFS, txRes.items);
-      this._sp500Data  = this.mapQuoteData(SP500_ETFS, txRes.items);
+      this._nasdaqData = this.mapQuoteData('nasdaq', NASDAQ_100_ETFS, txRes.items);
+      this._sp500Data  = this.mapQuoteData('sp500', SP500_ETFS, txRes.items);
       this.updateListData();
 
       this.setData({
@@ -115,8 +116,8 @@ Page({
    * 将腾讯行情映射为卡片格式
    * 溢价实时计算：(最新价 ÷ 净值 − 1) × 100
    */
-  mapQuoteData(etfPool, items) {
-    return etfPool.map(etf => {
+  mapQuoteData(tabKey, etfPool, items) {
+    const list = etfPool.map(etf => {
       const meta = ETF_MAP[etf.code] || {};
       const q = items.find(i => i.code === etf.code) || {};
 
@@ -162,6 +163,46 @@ Page({
         quoteTime:     q.time || ''
       };
     });
+
+    // 首次加载按溢价率由低到高定序，后续刷新只更新数值、保持顺序
+    return this.applyPremiumOrder(tabKey, list);
+  },
+
+  /**
+   * 首次按溢价率升序排列并记住顺序；之后沿用该顺序
+   * 新出现的基金代码追加到末尾
+   */
+  applyPremiumOrder(tabKey, list) {
+    if (!this._order) this._order = {};
+    const saved = this._order[tabKey];
+
+    if (!saved) {
+      list.sort((a, b) => {
+        const pa = (a.premium == null) ? Infinity : a.premium;
+        const pb = (b.premium == null) ? Infinity : b.premium;
+        return pa - pb;
+      });
+      this._order[tabKey] = list.map(i => i.code);
+      return list;
+    }
+
+    const pos = {};
+    saved.forEach((code, i) => { pos[code] = i; });
+
+    list.sort((a, b) => {
+      const ia = pos[a.code];
+      const ib = pos[b.code];
+      if (ia === undefined && ib === undefined) return 0;
+      if (ia === undefined) return 1;
+      if (ib === undefined) return -1;
+      return ia - ib;
+    });
+
+    // 记录新出现的代码，避免下次仍排到末尾
+    const append = list.filter(i => pos[i.code] === undefined).map(i => i.code);
+    if (append.length) this._order[tabKey] = saved.concat(append);
+
+    return list;
   },
 
   // ========== 申购状态（QDII Lens）==========
