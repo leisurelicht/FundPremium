@@ -238,7 +238,7 @@ Page({
     return {
       backgroundColor: '#fafbfd',
       animation: false,
-      grid: { left: 10, right: 12, top: 30, bottom: 24 },
+      grid: { left: 6, right: 14, top: 30, bottom: 22, containLabel: true },
       xAxis: {
         type: 'category',
         data: dates,
