@@ -165,38 +165,60 @@
   overflow: hidden;
 }
 
-.name-row {
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  margin-bottom: 4rpx;
-}
-
 .fund-name {
+  display: block;
   font-size: 30rpx;
   font-weight: 700;
   color: #1a1a2e;
-  line-height: 1.3;
-  white-space: nowrap;
-  margin-right: 10rpx;
-}
-
-.fund-code-inline {
-  font-size: 22rpx;
-  color: #aaa;
-  font-family: 'SF Mono', 'Menlo', monospace;
-  font-weight: 500;
-  line-height: 1.3;
-}
-
-.fund-company {
-  display: block;
-  font-size: 22rpx;
-  color: #b0b5c0;
-  line-height: 1.3;
+  line-height: 40rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-bottom: 4rpx;
+}
+
+.code-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.fund-code-inline {
+  font-size: 21rpx;
+  color: #fff;
+  background: #9aa0b0;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-weight: 600;
+  line-height: 1.3;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+  letter-spacing: 1rpx;
+}
+
+/* 申购状态微标 */
+.sub-badge {
+  margin-left: 8rpx;
+  padding: 0 8rpx;
+  border-radius: 4rpx;
+  font-size: 18rpx;
+  font-weight: 600;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+
+.sub-suspended {
+  background: #fde8e7;
+  color: #e8453c;
+}
+
+.sub-limited {
+  background: #fff4e5;
+  color: #f0883a;
+}
+
+.sub-open {
+  background: #e6f7f0;
+  color: #1cad6d;
 }
 
 /* 右侧价格区 */

@@ -58,14 +58,14 @@
         data-company="{{item.company}}"
         data-fullname="{{item.fullName}}"
       >
-        <!-- 第一行：名称+代码 / 价格+涨跌 -->
+        <!-- 第一行：基金全名（可滚动） / 价格+涨跌 -->
         <view class="card-top">
           <view class="card-left">
-            <view class="name-row">
-              <text class="fund-name">{{item.name}}</text>
+            <text class="fund-name">{{item.name}}</text>
+            <view class="code-row">
               <text class="fund-code-inline">{{item.code}}</text>
+              <text wx:if="{{item.subLabel}}" class="sub-badge sub-{{item.subStatus}}">{{item.subLabel}}</text>
             </view>
-            <text class="fund-company">{{item.company}}</text>
           </view>
           <view class="card-right">
             <text class="price-value {{item.changeClass}}">{{item.priceStr}}</text>
