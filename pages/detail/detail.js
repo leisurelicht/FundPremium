@@ -163,11 +163,12 @@ Page({
       ]);
 
       const trackingErr = calcTrackingError(navRes.navList, idxRes.klines);
+      const suffix = this.isSP500Code(this.data.code) ? ' SPY' : ' QQQ';
       if (trackingErr === null) {
         this.setData({ trackingErrStr: '数据不足', trackingErrLoading: false });
       } else {
         this.setData({
-          trackingErrStr: (trackingErr * 100).toFixed(2) + '%',
+          trackingErrStr: (trackingErr * 100).toFixed(2) + '%' + suffix,
           trackingErrLoading: false
         });
       }

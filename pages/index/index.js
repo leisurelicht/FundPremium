@@ -407,7 +407,8 @@ Page({
       try {
         const navRes = await fetchNavHistory(etf.code);
         const te = calcTrackingError(navRes.navList, idxKlines);
-        const str = te !== null ? (te * 100).toFixed(2) + '%' : '数据不足';
+        const suffix = dataKey === '_sp500Data' ? ' SPY' : ' QQQ';
+        const str = te !== null ? (te * 100).toFixed(2) + '%' + suffix : '数据不足';
         this.updateTrackingError(dataKey, etf.code, str);
         console.log(`[跟踪误差] ${etf.code} = ${str}`);
       } catch (e) {
