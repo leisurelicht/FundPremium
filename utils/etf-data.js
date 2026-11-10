@@ -95,15 +95,20 @@ function calcTrackingError(navList, indexList) {
     return null;
   }
 
+  // 只取近一年（避免早期数据偏差放大误差）
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const cutoff = oneYearAgo.toISOString().slice(0, 10); // YYYY-MM-DD
+
   // 指数日期→收盘价快速查找
   const idxMap = {};
   for (const item of indexList) {
-    if (item.close > 0) idxMap[item.date] = item.close;
+    if (item.close > 0 && item.date >= cutoff) idxMap[item.date] = item.close;
   }
 
-  // 净值按日期排序
+  // 净值按日期排序，仅取近一年
   const sortedNav = navList
-    .filter(i => i.nav > 0)
+    .filter(i => i.nav > 0 && i.date >= cutoff)
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const diffs = [];
