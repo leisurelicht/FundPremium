@@ -36,6 +36,8 @@ class WxCanvas {
   setChart(chart) { this.chart = chart; }
   attachEvent() {}
   detachEvent() {}
+  addEventListener() {}
+  removeEventListener() {}
 
   _initStyle(ctx) {
     const styles = ['fillStyle', 'strokeStyle', 'globalAlpha', 'textAlign',
