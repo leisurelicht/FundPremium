@@ -418,25 +418,16 @@
 }
 
 /* 溢折率内联微标 */
-.premium-inline {
-  padding: 0 8rpx;
-  border-radius: 4rpx;
-  display: inline-block;
-}
-.premium-inline-premium-high { background: #fde8e7; }
-.premium-inline-premium-high .premium-val { color: #e8453c; }
-.premium-inline-premium       { background: #fff3eb; }
-.premium-inline-premium .premium-val       { color: #f06b32; }
-.premium-inline-discount      { background: #e6f7f0; }
-.premium-inline-discount .premium-val      { color: #1cad6d; }
-.premium-inline-flat          { background: #f0f2f8; }
-.premium-inline-flat .premium-val          { color: #888; }
-
 .premium-val {
   font-size: 24rpx;
   font-weight: 700;
   font-family: 'DIN', 'SF Pro Display', sans-serif;
 }
+
+.metric-value.premium-val.premium-high { color: #e8453c; }
+.metric-value.premium-val.premium       { color: #f06b32; }
+.metric-value.premium-val.discount      { color: #1cad6d; }
+.metric-value.premium-val.flat          { color: #888; }
 
 .arrow-icon {
   margin-left: 12rpx;

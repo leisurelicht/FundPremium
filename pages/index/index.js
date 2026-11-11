@@ -57,6 +57,15 @@ Page({
       const cached = wx.getStorageSync('te_cache');
       if (cached && cached.date === today && cached.map) {
         this._teCache = cached.map;
+        // 清理旧版缓存中可能残留的 QQQ / SPY 后缀
+        for (const code of Object.keys(this._teCache)) {
+          const v = this._teCache[code];
+          if (typeof v === 'string' && (v.endsWith(' QQQ') || v.endsWith(' SPY'))) {
+            this._teCache[code] = v.slice(0, -4);
+          }
+        }
+        // 持久化清洗后的数据
+        if (typeof this.saveTeCache === 'function') this.saveTeCache();
         // 只有当全部 ETF 都有缓存时才跳过重算（新加入的基金会自动触发补算）
         const allCodes = NASDAQ_100_ETFS.concat(SP500_ETFS).map(c => c.code);
         this._teDone = allCodes.every(code => code in cached.map);
@@ -162,7 +171,7 @@ Page({
         iopvStr:       iopv != null ? iopv.toFixed(3) : '--',
         prevCloseStr:  q.prevClose != null ? q.prevClose.toFixed(3) : '--',
         amountStr:     formatAmount(q.amountWan),
-        trackingErrStr: (this._teCache && this._teCache[etf.code]) || '--',
+        trackingErrStr: (this._teCache && this._teCache[etf.code] || '--').replace(/ (?:QQQ|SPY)$/, ''),
         feeStr:         (this._feeCache && this._feeCache[etf.code]) || '--',
         subStatus:     cachedSub.status || null,
         subLabel:      cachedSub.label || '',
@@ -399,7 +408,7 @@ Page({
       try {
         const feeRes = await fetchFundFee(etf.code);
         const str = (feeRes && feeRes.totalPct != null)
-          ? feeRes.totalPct.toFixed(2) + '%/年' : '--';
+          ? feeRes.totalPct.toFixed(2) + '%' : '--';
         this._feeCache[etf.code] = str;
         this.updateFeeBadge(etf.code, str);
       } catch (e) {
@@ -442,8 +451,7 @@ Page({
       try {
         const navRes = await fetchNavHistory(etf.code);
         const te = calcTrackingError(navRes.navList, idxKlines);
-        const suffix = dataKey === '_sp500Data' ? ' SPY' : ' QQQ';
-        const str = te !== null ? (te * 100).toFixed(2) + '%' + suffix : '数据不足';
+        const str = te !== null ? (te * 100).toFixed(2) + '%' : '数据不足';
         this.updateTrackingError(dataKey, etf.code, str);
         console.log(`[跟踪误差] ${etf.code} = ${str}`);
       } catch (e) {

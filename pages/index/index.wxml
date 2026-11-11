@@ -101,18 +101,16 @@
         <view class="card-bottom">
           <view class="metrics-row">
             <view class="metric-item">
+              <text class="metric-label">溢折率</text>
+              <text class="metric-value premium-val {{item.premiumClass}}">{{item.premiumStr}}</text>
+            </view>
+            <view class="metric-item">
               <text class="metric-label">净值</text>
               <text class="metric-value">{{item.iopvStr}}</text>
             </view>
             <view class="metric-item">
               <text class="metric-label">成交额</text>
               <text class="metric-value">{{item.amountStr}}</text>
-            </view>
-            <view class="metric-item">
-              <text class="metric-label">溢折率</text>
-              <view class="premium-inline premium-inline-{{item.premiumClass}}">
-                <text class="metric-value premium-val">{{item.premiumStr}}</text>
-              </view>
             </view>
             <view class="metric-item">
               <text class="metric-label">跟踪误差</text>

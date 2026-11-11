@@ -68,21 +68,20 @@ Page({
     this.setData({ loading: true, error: '' });
 
     try {
-      // 并行：QDII Lens 行情 + 腾讯 OHLC + K线 + 溢价历史
+      // 分批请求：腾讯（快速）→ QDII Lens（串行，避免并发超时）
       const etf = { code: this.data.code, market: this.data.market };
-      const [quoteRes, txRes, klineRes, premiumRes, feeRes] = await Promise.all([
-        fetchFundQuote(this.data.code),
+      const [txRes, klineRes] = await Promise.all([
         fetchQuotes([etf]),
-        fetchKline(etf, 250),
-        fetchPremiumHistory(this.data.code, '1y').catch(e => {
-          console.warn('溢价历史加载失败:', e.message || e);
-          return null;
-        }),
-        fetchFundFee(this.data.code).catch(e => {
-          console.warn('费率加载失败:', e.message || e);
-          return null;
-        })
+        fetchKline(etf, 250)
       ]);
+
+      // QDII Lens 请求串行以减少超时风险
+      let quoteRes = null;
+      let premiumRes = null;
+      let feeRes = null;
+      try { quoteRes = await fetchFundQuote(this.data.code); } catch (e) { console.warn('报价失败'); }
+      try { premiumRes = await fetchPremiumHistory(this.data.code, '1y'); } catch (e) { console.warn('溢价历史失败'); }
+      try { feeRes = await fetchFundFee(this.data.code); } catch (e) { console.warn('费率失败'); }
 
       this.processQuote(quoteRes, txRes);
       this._klines = klineRes.klines || [];
@@ -94,7 +93,7 @@ Page({
         ecReady: true,
         loading: false,
         premiumEmpty: this._premiumPoints.length === 0,
-        feeStr: (feeRes && feeRes.totalPct != null) ? feeRes.totalPct.toFixed(2) + '%/年' : '--'
+        feeStr: (feeRes && feeRes.totalPct != null) ? feeRes.totalPct.toFixed(2) + '%' : '--'
       });
 
       // 异步计算跟踪误差
@@ -169,12 +168,11 @@ Page({
       ]);
 
       const trackingErr = calcTrackingError(navRes.navList, idxRes.klines);
-      const suffix = this.isSP500Code(this.data.code) ? ' SPY' : ' QQQ';
       if (trackingErr === null) {
         this.setData({ trackingErrStr: '数据不足', trackingErrLoading: false });
       } else {
         this.setData({
-          trackingErrStr: (trackingErr * 100).toFixed(2) + '%' + suffix,
+          trackingErrStr: (trackingErr * 100).toFixed(2) + '%',
           trackingErrLoading: false
         });
       }
